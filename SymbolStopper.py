@@ -47,7 +47,7 @@ def DoesFileHaveDebugInfo(inFile):
         return DoesELFFileHaveDebugInfo(inFile)
     return False
 
-if __main__:
+if __name__ == "__main__":
     args = ParseArgs()
     file = Path(args.Filepath)
     if file.is_file():
@@ -55,6 +55,5 @@ if __main__:
             quit(-3)
     else:
         quit(-2)
-
 else:
     quit(-1)
