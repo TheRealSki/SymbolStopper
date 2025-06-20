@@ -2,6 +2,7 @@
 
 import argparse
 import pefile
+import lief
 from pathlib import Path
 import elftools.elf.elffile as elffile
 import elftools.dwarf.dwarfinfo as dwarfinfo
