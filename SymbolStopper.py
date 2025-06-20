@@ -10,15 +10,16 @@ import elftools.dwarf.dwarfinfo as dwarfinfo
 def ParseArgs():
     parser = argparse.ArgumentParser(prog='SymbolStopper', description='Checks to see if the provided file has debug information.')
 
-    parser.addargument('Filepath')
+    parser.add_argument('Filepath')
 
     return parser.parse_args()
 
 def DoesPEFileHaveDebugInfo(peFile):
-    return True
+    if hasattr(peFile, 'DIRECTORY_ENTRY_DEBUG'):
+        return True
 
 def DoesCOFFFileHaveDebugInfo(coffFile):
-    return True
+    return False
 
 def DoesELFFileHaveDebugInfo(elfFile):
     return True
@@ -26,26 +27,30 @@ def DoesELFFileHaveDebugInfo(elfFile):
 def CrackFile(file, byteCount):
     byteList = []
     with file.open('rb') as f:
-        for 0 to byteCount:
-            byteList.push_back(f.readbyte())
-        return byteList.to_array()
+        for _ in range(byteCount):
+            byteList.append(f.read(1))
+        return byteList
 
 def DoesFileHaveDebugInfo(inFile):
+    if ".map" in inFile.name or ".dmp" in inFile.name:
+        return True
+
     pe = pefile.PE(inFile, fast_load=True)
     if pe.is_exe() or pe.is_dll() or pe.is_driver():
         return DoesPEFileHaveDebugInfo(pe)
     
-    byteStr = str(CrackFile(inFile, 4))
+    byteStr = str(CrackFile(inFile, 100))
     if "Microsoft C/C++" in byteStr and ("MSF 7.00" in byteStr or "program database 2.00" in byteStr):
         return True    #Likely a PDB file
-    COFFMagic = int(CrackFile(inFile, 4))
+    
+    COFFMagic = int.from_bytes(CrackFile(inFile, 4), 'little')
     if COFFMagic == 332 or COFFMagic == 34404 or COFFMagic == 512:
         return DoesCOFFFileHaveDebugInfo(inFile)
-    if ".map" in inFile.name or ".dmp" in inFile.name:
-        return True
-    ELFMagic = int(CrackFile(inFile, 8))
+    
+    ELFMagic = int.from_bytes(CrackFile(inFile, 8), 'little')
     if ELFMagic == 1179403647:
         return DoesELFFileHaveDebugInfo(inFile)
+    
     return False
 
 if __name__ == "__main__":
